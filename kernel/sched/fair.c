@@ -81,6 +81,15 @@ static unsigned int normalized_sysctl_sched_base_slice	= 700000ULL;
 
 __read_mostly unsigned int sysctl_sched_migration_cost	= 500000UL;
 
+/* *ADDED THIS*
+ * Amount of vruntime (in nanoseconds) to subtract when boosting
+ * I/O-bound tasks on enqueue.
+ *
+ * Default = 2 ms (2,000,000 ns)
+ */
+unsigned int sysctl_sched_io_boost_ns __read_mostly = 2 * 1000 * 1000;
+// *ADDED THIS*
+
 static int __init setup_sched_thermal_decay_shift(char *str)
 {
 	pr_warn("Ignoring the deprecated sched_thermal_decay_shift= option\n");
@@ -94,7 +103,7 @@ __setup("sched_thermal_decay_shift=", setup_sched_thermal_decay_shift);
 int __weak arch_asym_cpu_priority(int cpu)
 {
 	return -cpu;
-}
+}c
 
 /*
  * The margin used when comparing utilization with CPU capacity.
@@ -6815,6 +6824,25 @@ requeue_delayed_entity(struct sched_entity *se)
 	clear_delayed(se);
 }
 
+// *ADDED THIS [start]*
+static inline void se_maybe_io_boost(struct sched_entity *se)
+{
+    struct task_struct *p = task_of(se);
+    u64 boost = sysctl_sched_io_boost_ns;
+
+    /*
+     * If the task just woke up from I/O sleep, subtract
+     * a bit of vruntime to let it run sooner.
+     */
+    if (unlikely(p->in_iowait) && boost) {
+        if (se->vruntime > boost)
+            se->vruntime -= boost;
+			printk(KERN_INFO "sched_io_boost: pid=%d vruntime=%llu boost=%llu\n",
+               p->pid, se->vruntime, boost);
+    }
+}
+// *ADDED THIS [end]*
+
 /*
  * The enqueue_task method is called before nr_running is
  * increased. Here we update the fair scheduling stats and
@@ -6874,6 +6902,7 @@ enqueue_task_fair(struct rq *rq, struct task_struct *p, int flags)
 			se->custom_slice = 1;
 		}
 		enqueue_entity(cfs_rq, se, flags);
+		se_maybe_io_boost(se); // *ADDED THIS
 		slice = cfs_rq_min_slice(cfs_rq);
 
 		cfs_rq->h_nr_runnable += h_nr_runnable;
