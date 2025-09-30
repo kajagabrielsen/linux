@@ -58,6 +58,9 @@
 #include "stats.h"
 #include "autogroup.h"
 
+/* Light RR cap for CFS: request a reschedule after this much uninterrupted runtime */
+#define CFS_RR_CAP_NS (2ULL * NSEC_PER_MSEC)  /* 2 ms default; tweak freely */
+
 /*
  * The initial- and re-scaling of tunables is configurable
  *
@@ -5485,6 +5488,8 @@ set_next_entity(struct cfs_rq *cfs_rq, struct sched_entity *se)
 	}
 
 	update_stats_curr_start(cfs_rq, se);
+	/* RR cap: start counting from the moment this entity becomes current */
+	se->rr_start_sum_exec = se->sum_exec_runtime;
 	WARN_ON_ONCE(cfs_rq->curr);
 	cfs_rq->curr = se;
 
@@ -8805,6 +8810,12 @@ pick_next_task_fair(struct rq *rq, struct task_struct *prev, struct rq_flags *rf
 
 again:
 	p = pick_task_fair(rq);
+	/* Added for logging */
+	if (p) {
+    		p->sched_count++;
+    		printk(KERN_INFO "CFS: PID %d (%s) scheduled %lu times\n", p->pid, p->comm, p->sched_count);
+	}
+
 	if (!p)
 		goto idle;
 	se = &p->se;
@@ -13057,6 +13068,15 @@ static void task_tick_fair(struct rq *rq, struct task_struct *curr, int queued)
 
 	update_misfit_status(curr, rq);
 	check_update_overutilized_status(task_rq(curr));
+
+	/* --- Light RR cap: soft preempt after a small uninterrupted runtime --- */
+	struct cfs_rq *crq = cfs_rq_of(&curr->se);
+	if (crq->nr_queued > 1) {           
+    		u64 ran = curr->se.sum_exec_runtime - curr->se.rr_start_sum_exec;
+    		if (ran >= CFS_RR_CAP_NS) {
+        		resched_curr(rq);
+		}
+	}
 
 	task_tick_core(rq, curr);
 }
