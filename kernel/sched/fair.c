@@ -164,6 +164,17 @@ static const struct ctl_table sched_fair_sysctls[] = {
 		.extra1		= SYSCTL_ZERO,
 	},
 #endif /* CONFIG_NUMA_BALANCING */
+// *ADDED THIS [start]*
+    {
+        .procname       = "sched_io_boost_ns",
+        .data           = &sysctl_sched_io_boost_ns,
+        .maxlen         = sizeof(unsigned int),
+        .mode           = 0644,
+        .proc_handler   = proc_douintvec_minmax,
+        .extra1         = SYSCTL_ZERO,                  /* minimum = 0 */
+        .extra2         = SYSCTL_ONE_HUNDRED_MILLION,   /* maximum = 100 ms */
+    },
+    // *ADDED THIS [end]*
 };
 
 static int __init sched_fair_sysctl_init(void)
