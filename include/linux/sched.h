@@ -581,6 +581,7 @@ struct sched_entity {
 
 	u64				exec_start;
 	u64				sum_exec_runtime;
+	u64                     	rr_start_sum_exec; /* RR cap: snapshot when scheduled in */
 	u64				prev_sum_exec_runtime;
 	u64				vruntime;
 	union {
