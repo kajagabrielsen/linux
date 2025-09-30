@@ -1119,6 +1119,9 @@ struct task_struct {
 	unsigned long			nvcsw;
 	unsigned long			nivcsw;
 
+	/* Added for logging */
+	unsigned long sched_count;
+
 	/* Monotonic time in nsecs: */
 	u64				start_time;
 
