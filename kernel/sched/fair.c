@@ -106,7 +106,7 @@ __setup("sched_thermal_decay_shift=", setup_sched_thermal_decay_shift);
 int __weak arch_asym_cpu_priority(int cpu)
 {
 	return -cpu;
-}c
+}
 
 /*
  * The margin used when comparing utilization with CPU capacity.
@@ -172,7 +172,7 @@ static const struct ctl_table sched_fair_sysctls[] = {
         .mode           = 0644,
         .proc_handler   = proc_douintvec_minmax,
         .extra1         = SYSCTL_ZERO,                  /* minimum = 0 */
-        .extra2         = SYSCTL_ONE_HUNDRED_MILLION,   /* maximum = 100 ms */
+        .extra2         = &(unsigned int){100000000},   /* maximum = 100 ms */
     },
     // *ADDED THIS [end]*
 };
