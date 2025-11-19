@@ -13082,7 +13082,7 @@ static void task_tick_fair(struct rq *rq, struct task_struct *curr, int queued)
 
 	/* --- Light RR cap: soft preempt after a small uninterrupted runtime --- */
 	struct cfs_rq *crq = cfs_rq_of(&curr->se);
-	if (crq->nr_queued => 1) {           
+	if (crq->nr_queued >= 1) {           
     		u64 ran = curr->se.sum_exec_runtime - curr->se.rr_start_sum_exec;
     		if (ran >= CFS_RR_CAP_NS) {
         		resched_curr(rq);
